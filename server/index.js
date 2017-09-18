@@ -82,7 +82,7 @@ const listenChanges = async(connection, io) => {
     cursor.each(function (err, row) {
       if (err) throw err
       console.log(JSON.stringify(row, null, 2))
-      socket.emit('user.onAdded', row)
+      socket.emit('users.changed', row)
     })
   })
 }

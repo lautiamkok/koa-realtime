@@ -30,7 +30,7 @@ export default {
     }
   },
   created () {
-    socket.on('user.onAdded', function(data) {
+    socket.on('users.changed', function(data) {
       // Push the new user in.
       if(data.new_val !== undefined && data.new_val !== null) {
         this.users.push(data.new_val)
