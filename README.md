@@ -17,7 +17,7 @@ $ npm run dev
 $ npm start
 ```
 
-Docs
+Dependencies
 ==========
 
 * [koa-static](https://github.com/koajs/static) - Koa static file serving middleware, wrapper for koa-send.
