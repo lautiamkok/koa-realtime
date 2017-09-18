@@ -6,7 +6,7 @@ import socket from 'socket.io'
 import http from 'http'
 import Router from 'koa-trie-router'
 import mount from 'koa-mount'
-import r from'rethinkdb'
+import r from 'rethinkdb'
 import config from './config'
 import middlewares from './middlewares'
 
@@ -65,7 +65,7 @@ const db = async() => {
     port: config.database.port,
     db: config.database.dbname
   })
-  return connection;
+  return connection
 }
 
 // Integrate socket and rethinkdb.
@@ -79,8 +79,8 @@ const listenChanges = async(connection, io) => {
     socket.on('disconnect', () => {
       console.log('user disconnected')
     })
-    cursor.each(function(err, row) {
-      if (err) throw err;
+    cursor.each(function (err, row) {
+      if (err) throw err
       console.log(JSON.stringify(row, null, 2))
       socket.emit('user.onAdded', row)
     })
@@ -256,7 +256,7 @@ const deleteUser = async(ctx, next) => {
 
   // Delete a single document by id.
   // https://rethinkdb.com/api/javascript/delete/
-  var result = await r.table("users")
+  var result = await r.table('users')
     .get(objectId)
     .delete()
     .run(connection)
@@ -267,11 +267,9 @@ const deleteUser = async(ctx, next) => {
   ctx.body = result
 }
 
-
-
 // Add routes here.
 router
-  .use(function(ctx, next) {
+  .use(function (ctx, next) {
     console.log('* requests')
     return next()
   })
@@ -298,7 +296,6 @@ app.use(ctx => {
     })
   })
 })
-
 
 // If you want to do unit testing, it's important to export the http.Server
 // object returned by app.listen(3000) instead of just the function app,
