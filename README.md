@@ -1,4 +1,4 @@
-Koa + RethinkDB + Socket.io + Nuxt
+Koa Realtime
 ===========
 
 > Creating a realtime application with Koa, RethinkDB, Socket.io and Nuxt.
