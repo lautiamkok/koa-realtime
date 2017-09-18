@@ -69,7 +69,7 @@ const db = async() => {
 }
 
 // Integrate socket and rethinkdb.
-const listenChanges = async(connection, io) => {
+const listenChanges = async(connection) => {
   var cursor = await r.table('users')
     .changes()
     .run(connection)
@@ -108,7 +108,7 @@ const getUsers = async(ctx, next) => {
   var users = await cursor.toArray()
 
   // Now start listening for changes in the table.
-  await listenChanges(connection, io)
+  await listenChanges(connection)
 
   ctx.type = 'json'
   ctx.body = users
