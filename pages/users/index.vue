@@ -31,18 +31,37 @@ export default {
   },
   created () {
     socket.on('users.changed', function(data) {
+
+      // Make sure there are new_val & old_val in data.
+      if (data.new_val === undefined && data.old_val === undefined) {
+        return
+      }
+
       // Push the new user in.
-      if(data.new_val !== undefined && data.new_val !== null) {
+      if(data.old_val === null && data.new_val !== null) {
         this.users.push(data.new_val)
       }
+
       // Pop off the deleted user.
-      if(data.old_val !== undefined && data.old_val !== null) {
+      if(data.new_val === null && data.old_val !== null) {
         var id = data.old_val.id
+        // Find index of the deleted item.
         var index = this.users.map(function(el) {
-          return el.id;
-        }).indexOf(id);
+          return el.id
+        }).indexOf(id)
         this.users.splice(index, 1)
       }
+
+      // Update the current user.
+      if(data.new_val !== null && data.old_val !== null) {
+        var id = data.new_val.id
+        // Another method finding index of an item.
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/findIndex
+        // var index = array.findIndex(function(item) {return item.id === id})
+        var index = this.users.findIndex(item => item.id === id)
+        this.users.splice(index, 1, data.new_val)
+      }
+
     }.bind(this))
   }
 }
