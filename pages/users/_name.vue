@@ -14,6 +14,7 @@
 
 <script>
 import axios from '~/plugins/axios'
+import socket from '~/plugins/socket.io'
 
 export default {
   name: 'name',
@@ -21,7 +22,9 @@ export default {
     console.log(params)
     return axios.get('/api/users/' + params.name)
       .then((res) => {
-        return { user: res.data.data }
+        return {
+          user: res.data.data
+        }
       })
       .catch((e) => {
         error({ statusCode: 404, message: 'User not found' })
@@ -31,6 +34,21 @@ export default {
     return {
       title: `User: ${this.user.name}`
     }
+  },
+  created () {
+    socket.on('users.changed', function(data) {
+
+      // Make sure there are new_val & old_val in data.
+      if (data.new_val === undefined && data.old_val === undefined) {
+        return
+      }
+
+      // Update the current user.
+      if(data.new_val !== null && data.old_val !== null) {
+        this.user = data.new_val
+      }
+
+    }.bind(this))
   }
 }
 </script>
