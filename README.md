@@ -3,6 +3,8 @@ Koa Realtime
 
 > Creating a realtime Koa application with RethinkDB, Socket.io and Nuxt.
 
+Read the post [here](https://www.codementor.io/lautiamkok/creating-a-realtime-koa-application-with-rethinkdb-socket-io-and-nuxt-c45vl2j3c) about this repository.
+
 Quick start
 =============
 
