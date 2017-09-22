@@ -38,6 +38,33 @@ const io = socket(server)
 // Essential middlewares are imported here.
 middlewares(app, io)
 
+// Integrate socket and rethinkdb.
+// It should be done only once globally.
+try {
+  io.sockets.on('connection', async(socket) => {
+    console.log('a user connected')
+    socket.on('disconnect', () => {
+      console.log('user disconnected')
+    })
+
+    // Get the db connection.
+    const connection = await db()
+
+    // Subscribe to user table's changefeed.
+    var cursor = await r.table('users')
+      .changes()
+      .run(connection)
+
+    cursor.each(function (err, row) {
+      if (err) throw err
+      console.log(JSON.stringify(row, null, 2))
+      socket.emit('users.changed', row)
+    })
+  })
+} catch (err) {
+  console.log("Failed to retrieve user records from database.")
+}
+
 const middleware1 = async(ctx, next) => {
   console.log("I'll be logged first. ")
   await next()
@@ -68,27 +95,7 @@ const db = async() => {
   return connection
 }
 
-// Integrate socket and rethinkdb.
-const listenChanges = async(connection) => {
-  var cursor = await r.table('users')
-    .changes()
-    .run(connection)
-
-  io.sockets.on('connection', (socket) => {
-    console.log('a user connected')
-    socket.on('disconnect', () => {
-      console.log('user disconnected')
-    })
-    cursor.each(function (err, row) {
-      if (err) throw err
-      console.log(JSON.stringify(row, null, 2))
-      socket.emit('users.changed', row)
-    })
-  })
-}
-
 const getUsers = async(ctx, next) => {
-  await next()
 
   // Get the db connection.
   const connection = await db()
@@ -107,15 +114,14 @@ const getUsers = async(ctx, next) => {
   // Convert the object to array.
   var users = await cursor.toArray()
 
-  // Now start listening for changes in the table.
-  await listenChanges(connection)
+  connection.close()
 
   ctx.type = 'json'
   ctx.body = users
 }
 
 const getUser = async(ctx, next) => {
-  await next()
+
   let name = ctx.params.name
 
   // Throw the error if no name.
@@ -144,6 +150,8 @@ const getUser = async(ctx, next) => {
     .default(null) // will return null if no user found.
     .run(connection)
 
+  connection.close()
+
   // Throw the error if no user found.
   if (user === null) {
     ctx.throw(400, 'no user found')
@@ -153,7 +161,6 @@ const getUser = async(ctx, next) => {
 }
 
 const insertUser = async(ctx, next) => {
-  await next()
 
   // Get the db connection.
   const connection = await db()
@@ -185,11 +192,13 @@ const insertUser = async(ctx, next) => {
     .insert(document)
     .run(connection)
 
+  connection.close()
+
   ctx.body = result
 }
 
 const updateUser = async(ctx, next) => {
-  await next()
+
 
   // Get the db connection.
   const connection = await db()
@@ -230,11 +239,12 @@ const updateUser = async(ctx, next) => {
     .update(updateQuery, {returnChanges: true})
     .run(connection)
 
+  connection.close()
+
   ctx.body = result
 }
 
 const deleteUser = async(ctx, next) => {
-  await next()
 
   // Get the db connection.
   const connection = await db()
@@ -260,6 +270,8 @@ const deleteUser = async(ctx, next) => {
     .get(objectId)
     .delete()
     .run(connection)
+
+  connection.close()
 
   // Delete all documents.
   // var result = await r.table("users").delete().run(connection)
