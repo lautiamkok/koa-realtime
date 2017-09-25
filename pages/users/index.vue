@@ -29,7 +29,7 @@ export default {
       title: 'Users'
     }
   },
-  created () {
+  mounted () {
     socket.on('users.changed', function(data) {
 
       // Make sure there are new_val & old_val in data.

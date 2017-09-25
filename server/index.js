@@ -38,33 +38,6 @@ const io = socket(server)
 // Essential middlewares are imported here.
 middlewares(app, io)
 
-// Integrate socket and rethinkdb.
-// It should be done only once globally.
-try {
-  io.sockets.on('connection', async(socket) => {
-    console.log('a user connected')
-    socket.on('disconnect', () => {
-      console.log('user disconnected')
-    })
-
-    // Get the db connection.
-    const connection = await db()
-
-    // Subscribe to user table's changefeed.
-    var cursor = await r.table('users')
-      .changes()
-      .run(connection)
-
-    cursor.each(function (err, row) {
-      if (err) throw err
-      console.log(JSON.stringify(row, null, 2))
-      socket.emit('users.changed', row)
-    })
-  })
-} catch (err) {
-  console.log("Failed to retrieve user records from database.")
-}
-
 const middleware1 = async(ctx, next) => {
   console.log("I'll be logged first. ")
   await next()
@@ -309,9 +282,72 @@ app.use(ctx => {
   })
 })
 
+// Integrate socket and rethinkdb.
+// It should be done only once globally.
+async function listenUserChanges() {
+  io.sockets.on('connection', function(socket) {
+    console.log('a user connected: ' + socket.id)
+    socket.on('disconnect', () => {
+      console.log('user disconnected: ' + socket.id)
+    })
+  })
+
+  // Get the db connection.
+  const connection = await db()
+
+  // Subscribe to user table's changefeed.
+  var cursor = await r.table('users')
+    .changes()
+    .run(connection)
+
+  cursor.each(function (err, row) {
+    if (err) throw err
+    console.log(JSON.stringify(row, null, 2))
+    io.emit('users.changed', row)
+  })
+}
+
+// Must catch the async.
+try {
+  listenUserChanges()
+} catch( err ) {
+  console.error( err );
+}
+
+// // Or: none-async-await (callbacks)
+// io.sockets.on('connection', function(socket) {
+//   console.log('a user connected: ' + socket.id)
+//   socket.on('disconnect', () => {
+//     console.log('user disconnected: ' + socket.id)
+//   })
+// })
+
+// r.connect({
+//   host: config.database.host,
+//   port: config.database.port,
+//   db: config.database.dbname
+// }, function(err, conn) {
+//   if(err) throw err
+
+//   r.table('users')
+//   .changes()
+//   .run(conn, function(err, cursor) {
+//     if(err) throw err
+//     cursor.each(function (err, row) {
+//       if (err) throw err
+//       console.log(JSON.stringify(row, null, 2))
+//       io.emit("users.changed", row)
+//     })
+//   })
+// })
+
 // If you want to do unit testing, it's important to export the http.Server
 // object returned by app.listen(3000) instead of just the function app,
 // otherwise you will get TypeError: app.address is not a function.
 // server.listen(port, host)
 // server.listen(port, host)
 module.exports = server.listen(port, host)
+
+// Code references:
+// https://github.com/cpenarrieta/rethinkDb_sample
+// https://github.com/jhoestje/rethinkdb-changefeed-example
